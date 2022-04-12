@@ -1,18 +1,17 @@
-import copy
-from collections import Counter
-from collections import deque
 import cv2 as cv
 import mediapipe as mp
 from helper import *
-
-import os 
-import time
-from datetime import datetime 
-from serial import Serial
-import socket, threading, sys, traceback, os, time
-
-
 import serial
+import socket
+
+#import copy
+#from collections import Counter
+#from collections import deque
+#import os 
+#import time
+#from datetime import datetime 
+#from serial import Serial
+#import socket, threading, sys, traceback, os, time
 
 """
 SERIAL = False
@@ -55,6 +54,7 @@ class HandGesture():
             self.connect()
 
         ## Output to send to Pi
+        self.hand_sign_id = 3 
         self.previous_action_id = 0
         self.current_action_id = 0
         self.auto_mode = False
@@ -86,7 +86,7 @@ class HandGesture():
 
 
     def main(self):
-        _, image = self.cap.read()
+        __, image = self.cap.read()
         image = cv.flip(image, 1) 
         debug_image = copy.deepcopy(image)
 
@@ -112,13 +112,13 @@ class HandGesture():
                     landmark_list)
 
                 # Hand sign classification
-                hand_sign_id = self.keypoint_classifier(pre_processed_landmark_list)
-                cv.putText(debug_image, "Detected shape: " + self.keypoint_classifier_labels[hand_sign_id], 
+                self.hand_sign_id = self.keypoint_classifier(pre_processed_landmark_list)
+                cv.putText(debug_image, "Detected shape: " + self.keypoint_classifier_labels[self.hand_sign_id], 
                 (10,30), 
                 cv.FONT_HERSHEY_DUPLEX, 
                 0.5, (0, 0, 0), 1, cv.LINE_AA)
                 self.previous_action_id = self.current_action_id
-                self.current_action_id = self.getActionAndMode(hand_sign_id, hand_landmarks.landmark[0].x)
+                self.current_action_id = self.getActionAndMode(self.hand_sign_id, hand_landmarks.landmark[0].x)
 
                 ## Draw result
                 debug_image = draw_bounding_rect(self.use_brect, debug_image, brect)
@@ -132,16 +132,16 @@ class HandGesture():
                     self.auto_mode
                 )
         else: # if there is no hand
-            self.current_action_id = 8 # do nothing
+            self.current_action_id = 0 # do nothing
             cv.putText(debug_image, "Detected shape: None", 
                 (10,30), 
                 cv.FONT_HERSHEY_DUPLEX, 
                 0.5, (0, 0, 0), 1, cv.LINE_AA)
 
-        current_mode = "Auto" if self.auto_mode else "Manual"
-        current_light = "On" if self.light_mode else "Off"
-        cv.putText(debug_image, "Current Mode: " + current_mode, (10,60), cv.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1, cv.LINE_AA)
-        cv.putText(debug_image, "Car Light: " + current_light, (10,90), cv.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1, cv.LINE_AA)
+        #current_mode = "Auto" if self.auto_mode else "Manual"
+        #current_light = "On" if self.light_mode else "Off"
+        #cv.putText(debug_image, "Current Mode: " + current_mode, (10,60), cv.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1, cv.LINE_AA)
+        #cv.putText(debug_image, "Car Light: " + current_light, (10,90), cv.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1, cv.LINE_AA)
 
         # SEND TO PI ThE self.CURRENT_ACTION_ID
         if self.connectStatus:
@@ -150,7 +150,7 @@ class HandGesture():
 
 
         ##########################################################################
-        return debug_image
+        return debug_image, self.hand_sign_id, self.current_action_id
 
     def getActionAndMode(self, hand_sign_id, hand_place):
         if hand_sign_id == 0 or hand_sign_id == 1: # UPWARD FIST OR NORMAL FIST
@@ -174,8 +174,8 @@ class HandGesture():
         elif hand_sign_id == 6: # THUMB RIGHT
             return 3 # go right
         elif hand_sign_id == 7: # OK
-            if (self.previous_action_id != 11): # if change mode first time
-                self.auto_mode = not self.auto_mode
+            #if (self.previous_action_id != 11): # if change mode first time
+            #    self.auto_mode = not self.auto_mode
             #return 11 # change mode
             return 8
         elif hand_sign_id == 8: # INDEX UP
@@ -224,7 +224,7 @@ if __name__ == "__main__":
         key = cv.waitKey(1)
         if key == 27:
             break
-        image = Hand_Object.main()
+        image, __ , __ = Hand_Object.main()
         #cv.imwrite('F:\\Hung Luu\\BK_19_22\\3_Junior\\212\\DMC\\App Design\\Self-drviving-Car_App\\images\\hand_gesture_images\\cache.jpeg',
                     #image)
         cv.imshow('Hand Gesture Recognition', image)

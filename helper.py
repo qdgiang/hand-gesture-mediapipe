@@ -315,9 +315,10 @@ def draw_info_text(image, brect, handedness, hand_sign_text,
 
 def draw_label(image, brect, handedness, hand_sign_text, current_mode):
     #info_text = handedness.classification[0].label[0:]
-    info_text = handedness.classification[0].label
+    #info_text = handedness.classification[0].label
+    info_text = "Action"
     if hand_sign_text != "":
-        info_text = info_text + ':' + hand_sign_text
+        info_text = info_text + ': ' + hand_sign_text
     cv.putText(image, info_text, (brect[0] + 5, brect[1] - 4),
                cv.FONT_HERSHEY_DUPLEX, 0.6, (0, 0, 0), 1, cv.LINE_AA)
     #cv.putText(image, "Current Mode: " + current_mode, (10,80), cv.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1, cv.LINE_AA)
