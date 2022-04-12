@@ -46,7 +46,8 @@ class HandGesture():
         self.LAN = LAN
         self.SERVER_PORT = 10
         self.rtspSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.LOCAL_HOST, self.PORT = ("172.20.10.3", self.SERVER_PORT)
+        #self.LOCAL_HOST, self.PORT = ("172.20.10.4", self.SERVER_PORT)
+        self.LOCAL_HOST, self.PORT = (socket.gethostbyname(socket.gethostname()), self.SERVER_PORT)
         self.clientConnected = None
         self.clientAddress = None
         
@@ -79,7 +80,7 @@ class HandGesture():
             min_tracking_confidence=self.min_tracking_confidence,
         )
         self.keypoint_classifier = KeyPointClassifier()
-        self.action_list = ["stop", "forward", "backward", "go left", "go right", "spin right", "spin left", "forward faster", "do nothing", "change mode", "change light"]
+        self.action_list = ["stop", "forward", "backward", "go right", "go left", "spin right", "spin left", "forward faster", "do nothing", "change mode", "change light"]
         self.keypoint_classifier_labels = ["upward fist", "normal fist", "reverse fist", "palm", "reverse palm", "thumb left", "thumb right", "OK", "index up"]
 
     def main(self):
@@ -167,18 +168,18 @@ class HandGesture():
         elif hand_sign_id == 4: # REVERSE PALM
             return 8 # do nothing
         elif hand_sign_id == 5: # THUMB LEFT
-            return 3 # go left
+            return 4 # go left
         elif hand_sign_id == 6: # THUMB RIGHT
-            return 4 # go right
+            return 3 # go right
         elif hand_sign_id == 7: # OK
             if (self.previous_action_id != 9): # if change mode first time
                 self.auto_mode = not self.auto_mode
-            return 9 # change mode
+            return 8 # change mode
             #return 8
         elif hand_sign_id == 8: # INDEX UP
             if (self.previous_action_id != 10): # if change light first time
                 self.light_mode = not self.light_mode
-            return 10 # change light
+            return 8 # change light
             #return 8
 
     def adjustSize(self,w,h):
@@ -205,7 +206,7 @@ class HandGesture():
             self.clientConnected.send(str.encode(str(self.current_action_id)+'.'))
     
 if __name__ == "__main__":
-    Hand_Object = HandGesture()
+    Hand_Object = HandGesture(connect_status=False, LAN=False)
     while True:
         key = cv.waitKey(1)
         if key == 27:
