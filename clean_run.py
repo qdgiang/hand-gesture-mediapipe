@@ -64,8 +64,8 @@ class HandGesture():
         self.use_brect = True
         self.cap_width = 620
         self.cap_height = 400
-        self.min_detection_confidence  = 0.7
-        self.min_tracking_confidence = 0.7
+        self.min_detection_confidence  = 0.8
+        self.min_tracking_confidence = 0.8
         self.cap_device = 0
         self.cap = cv.VideoCapture(self.cap_device)
         self.cap.set(cv.CAP_PROP_FRAME_WIDTH, self.cap_width)
@@ -80,8 +80,10 @@ class HandGesture():
             min_tracking_confidence=self.min_tracking_confidence,
         )
         self.keypoint_classifier = KeyPointClassifier()
-        self.action_list = ["stop", "forward", "backward", "go right", "go left", "spin right", "spin left", "forward faster", "do nothing", "change mode", "change light"]
-        self.keypoint_classifier_labels = ["upward fist", "normal fist", "reverse fist", "palm", "reverse palm", "thumb left", "thumb right", "OK", "index up"]
+        self.action_list = ["stop", "forward", "backward", "go right", "go left", "spin right", "spin left", "forward faster", "do nothing", "diagonal left", "diagonal right", "change mode", "change light"]
+        self.keypoint_classifier_labels = ["upward fist", "normal fist", "reverse fist", "close palm", "reverse palm", "thumb left", "thumb right", "OK", "index up"]
+        #self.keypoint_classifier_labels = ["upward fist", "normal fist", "reverse fist", "close palm", "reverse palm", "thumb left", "thumb right", "OK", "index up", "open palm"]
+
 
     def main(self):
         _, image = self.cap.read()
@@ -172,15 +174,26 @@ class HandGesture():
         elif hand_sign_id == 6: # THUMB RIGHT
             return 3 # go right
         elif hand_sign_id == 7: # OK
-            if (self.previous_action_id != 9): # if change mode first time
+            if (self.previous_action_id != 11): # if change mode first time
                 self.auto_mode = not self.auto_mode
-            return 8 # change mode
-            #return 8
+            #return 11 # change mode
+            return 8
         elif hand_sign_id == 8: # INDEX UP
-            if (self.previous_action_id != 10): # if change light first time
-                self.light_mode = not self.light_mode
-            return 8 # change light
+            if hand_place < 0.5:
+                return 9 # diagonal left
+            else:
+                return 10 # diagonal right
+            #if (self.previous_action_id != 12): # if change light first time
+            #    self.light_mode = not self.light_mode
+            #return 12 # change light
             #return 8
+
+        #elif hand_sign_id == 9: # OPEN PALM
+        #    if hand_place < 0.5:
+        #        return 9 # diagonal left
+        #    else:
+        #        return 10 # diagonal right
+
 
     def adjustSize(self,w,h):
         self.cap.set(cv.CAP_PROP_FRAME_WIDTH, w)
