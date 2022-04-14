@@ -36,22 +36,22 @@ if LAN:
 
 
 class HandGesture():
-    def __init__(self, connect_status = False, SERIAL = False, LAN = True):
+    def __init__(self):     #, connect_status = False, SERIAL = False, LAN = True):
         
         ## Connection 
-        self.connectStatus = connect_status
-        self.SERIAL = SERIAL
-        self.s = None
-        self.LAN = LAN
-        self.SERVER_PORT = 10
-        self.rtspSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #self.connectStatus = connect_status
+        #self.SERIAL = SERIAL
+        #self.s = None
+        #self.LAN = LAN
+        #self.SERVER_PORT = 10
+        #self.rtspSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #self.LOCAL_HOST, self.PORT = ("172.20.10.4", self.SERVER_PORT)
-        self.LOCAL_HOST, self.PORT = (socket.gethostbyname(socket.gethostname()), self.SERVER_PORT)
-        self.clientConnected = None
-        self.clientAddress = None
+        #self.LOCAL_HOST, self.PORT = (socket.gethostbyname(socket.gethostname()), self.SERVER_PORT)
+        #self.clientConnected = None
+        #self.clientAddress = None
         
-        if self.connectStatus:
-            self.connect()
+        #if self.connectStatus:
+        #    self.connect()
 
         ## Output to send to Pi
         self.hand_sign_id = 3 
@@ -84,6 +84,7 @@ class HandGesture():
         self.keypoint_classifier_labels = ["upward fist", "normal fist", "reverse fist", "close palm", "reverse palm", "thumb left", "thumb right", "OK", "index up"]
         #self.keypoint_classifier_labels = ["upward fist", "normal fist", "reverse fist", "close palm", "reverse palm", "thumb left", "thumb right", "OK", "index up", "open palm"]
 
+        #self.draw_on_cam = False
 
     def main(self):
         __, image = self.cap.read()
@@ -113,16 +114,19 @@ class HandGesture():
 
                 # Hand sign classification
                 self.hand_sign_id = self.keypoint_classifier(pre_processed_landmark_list)
+                """
                 cv.putText(debug_image, "Detected shape: " + self.keypoint_classifier_labels[self.hand_sign_id], 
                 (10,30), 
                 cv.FONT_HERSHEY_DUPLEX, 
-                0.5, (0, 0, 0), 1, cv.LINE_AA)
+                0.5, (0, 0, 0), 1, cv.LINE_AA)"""
                 self.previous_action_id = self.current_action_id
-                self.current_action_id = self.getActionAndMode(self.hand_sign_id, hand_landmarks.landmark[0].x)
+                self.current_action_id = self.getActionAndMode(self.hand_sign_id, hand_landmarks.landmark[0].x, hand_landmarks.landmark[8].x)
 
                 ## Draw result
-                debug_image = draw_bounding_rect(self.use_brect, debug_image, brect)
+                #debug_image = draw_bounding_rect(self.use_brect, debug_image, brect)
                 debug_image = draw_landmarks(debug_image, landmark_list)
+                
+                """
                 debug_image = draw_label(
                     debug_image,
                     brect,
@@ -130,13 +134,14 @@ class HandGesture():
                     self.action_list[self.current_action_id],
                     #keypoint_classifier_labels[hand_sign_id],
                     self.auto_mode
-                )
+                )"""
+                
         else: # if there is no hand
             self.current_action_id = 0 # do nothing
-            cv.putText(debug_image, "Detected shape: None", 
+            """cv.putText(debug_image, "Detected shape: None", 
                 (10,30), 
                 cv.FONT_HERSHEY_DUPLEX, 
-                0.5, (0, 0, 0), 1, cv.LINE_AA)
+                0.5, (0, 0, 0), 1, cv.LINE_AA)"""
 
         #current_mode = "Auto" if self.auto_mode else "Manual"
         #current_light = "On" if self.light_mode else "Off"
@@ -144,20 +149,20 @@ class HandGesture():
         #cv.putText(debug_image, "Car Light: " + current_light, (10,90), cv.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1, cv.LINE_AA)
 
         # SEND TO PI ThE self.CURRENT_ACTION_ID
-        if self.connectStatus:
-            self.sendToPi()
+        #if self.connectStatus:
+        #    self.sendToPi()
 
 
 
         ##########################################################################
         return debug_image, self.hand_sign_id, self.current_action_id
 
-    def getActionAndMode(self, hand_sign_id, hand_place):
+    def getActionAndMode(self, hand_sign_id, hand_place, hand_tip):
         if hand_sign_id == 0 or hand_sign_id == 1: # UPWARD FIST OR NORMAL FIST
             if hand_place < 0.33: # LEFT SCREEN FIST
-                return 6 # spin left
+                return 9 # diagonal left
             elif hand_place > 0.66: # RIGHT SCREEN FIST
-                return 5 # spin right
+                return 10 # diagonal right
             else:
                 if hand_sign_id == 0: # MIDDLE SCREEN UPWARD FIST
                     return 1 # normal forward
@@ -179,10 +184,10 @@ class HandGesture():
             #return 11 # change mode
             return 8
         elif hand_sign_id == 8: # INDEX UP
-            if hand_place < 0.5:
-                return 9 # diagonal left
+            if hand_tip < 0.5:
+                return 6 # spin left
             else:
-                return 10 # diagonal right
+                return 5 # spin right
             #if (self.previous_action_id != 12): # if change light first time
             #    self.light_mode = not self.light_mode
             #return 12 # change light
@@ -199,6 +204,7 @@ class HandGesture():
         self.cap.set(cv.CAP_PROP_FRAME_WIDTH, w)
         self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, h)
 
+    """
     def connect(self):
         if self.SERIAL:
             self.s = serial.Serial(port = 'COM3', baudrate=19200, bytesize = 8, timeout = 1)
@@ -216,10 +222,11 @@ class HandGesture():
             self.s.write(str.encode(str(self.current_action_id)+'.'))
             print(self.current_action_id)
         if self.LAN:
-            self.clientConnected.send(str.encode(str(self.current_action_id)+'.'))
+            self.clientConnected.send(str.encode(str(self.current_action_id)+'.'))"""
     
 if __name__ == "__main__":
-    Hand_Object = HandGesture(connect_status=False, LAN=False)
+    #Hand_Object = HandGesture(connect_status=False, LAN=False)
+    Hand_Object = HandGesture()
     while True:
         key = cv.waitKey(1)
         if key == 27:
