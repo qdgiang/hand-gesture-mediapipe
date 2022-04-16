@@ -80,10 +80,11 @@ class HandGesture():
             min_tracking_confidence=self.min_tracking_confidence,
         )
         self.keypoint_classifier = KeyPointClassifier()
-        self.action_list = ["stop", "forward", "backward", "go right", "go left", "spin right", "spin left", "forward faster", "do nothing", "diagonal left", "diagonal right", "change mode", "change light"]
+        self.action_list = ["stop", "forward", "backward", "go left", "go right", "spin right", "spin left", "forward faster", "do nothing", "diagonal left", "diagonal right", "change mode", "change light"]
         self.keypoint_classifier_labels = ["upward fist", "normal fist", "reverse fist", "close palm", "reverse palm", "thumb left", "thumb right", "OK", "index up"]
         #self.keypoint_classifier_labels = ["upward fist", "normal fist", "reverse fist", "close palm", "reverse palm", "thumb left", "thumb right", "OK", "index up", "open palm"]
-
+        self.printsen = ["Car is staying still 🛑", 
+        "Car is moving forward at normal speed ⬆️", "Car is moving backward ⬇️", "Car is moving left ⬅️", "Car is moving right ➡️", "Car is spinning right ↩️", "Car is spinning left ↪️", "Car is moving forward at fast speed ⬆️⬆️", "Car is doing nothing", "Car is moving diagonally left ↖️", "Car is moving diagonally right ↗️", "Car is changing mode", "Car is changing light"]
         #self.draw_on_cam = False
 
     def main(self):
@@ -126,7 +127,7 @@ class HandGesture():
                 #debug_image = draw_bounding_rect(self.use_brect, debug_image, brect)
                 debug_image = draw_landmarks(debug_image, landmark_list)
                 
-                """
+                
                 debug_image = draw_label(
                     debug_image,
                     brect,
@@ -134,7 +135,7 @@ class HandGesture():
                     self.action_list[self.current_action_id],
                     #keypoint_classifier_labels[hand_sign_id],
                     self.auto_mode
-                )"""
+                )
                 
         else: # if there is no hand
             self.current_action_id = 0 # do nothing
@@ -155,10 +156,15 @@ class HandGesture():
 
 
         ##########################################################################
-        return debug_image, self.hand_sign_id, self.current_action_id
+        return debug_image, self.current_action_id, self.printsen[self.current_action_id]
 
     def getActionAndMode(self, hand_sign_id, hand_place, hand_tip):
         if hand_sign_id == 0 or hand_sign_id == 1: # UPWARD FIST OR NORMAL FIST
+            if hand_sign_id == 0: # MIDDLE SCREEN UPWARD FIST
+                return 1 # normal forward
+            else: # MIDDLE SCREEN NORMAL FIST
+                return 7 # fast forward
+            """
             if hand_place < 0.33: # LEFT SCREEN FIST
                 return 9 # diagonal left
             elif hand_place > 0.66: # RIGHT SCREEN FIST
@@ -168,21 +174,22 @@ class HandGesture():
                     return 1 # normal forward
                 else: # MIDDLE SCREEN NORMAL FIST
                     return 7 # fast forward
+            """
         elif hand_sign_id == 2: # REVERSE FIST
             return 2 # backward
         elif hand_sign_id == 3: # PALM
             return 0 # stop
         elif hand_sign_id == 4: # REVERSE PALM
-            return 8 # do nothing
+            return 0 # do nothing
         elif hand_sign_id == 5: # THUMB LEFT
-            return 4 # go left
+            return 3 # go left
         elif hand_sign_id == 6: # THUMB RIGHT
-            return 3 # go right
+            return 4 # go right
         elif hand_sign_id == 7: # OK
             #if (self.previous_action_id != 11): # if change mode first time
             #    self.auto_mode = not self.auto_mode
             #return 11 # change mode
-            return 8
+            return 0
         elif hand_sign_id == 8: # INDEX UP
             if hand_tip < 0.5:
                 return 6 # spin left
